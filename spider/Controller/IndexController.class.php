@@ -10,8 +10,8 @@ class IndexController extends Controller
     public function index()
     {
         $arr = array(
-            'account' => 'lampwxy@163.com',
-            'password' => 'wxy1314520',
+            'account' => 'zgmy_0810@163.com',
+            'password' => '20170810_',
             'key' => "tmall",
         );
         $weChatLogin = new WeChatLoginController();

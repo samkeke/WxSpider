@@ -8,6 +8,7 @@
 
 namespace Spider\Controller;
 
+use CodeIgniter\Log\Logger;
 use function Sodium\add;
 use Think\Controller;
 use Think\Log;
@@ -76,7 +77,7 @@ class WeChatLoginController extends Controller
 
     private function _log($msg)
     {
-        \phpspider\core\log::info("[微信调度:" . date("Y-m-d H:i:s") . "] ======: {$msg}");
+        log_message('info' , "[微信调度:" . date("Y-m-d H:i:s") . "] ======: {$msg}");
     }
 
     public function getToken()
