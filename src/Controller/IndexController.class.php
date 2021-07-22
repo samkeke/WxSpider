@@ -1,6 +1,6 @@
 <?php
 
-namespace Spider\Controller;
+namespace WxSpider\Controller;
 
 use Think\Controller;
 
