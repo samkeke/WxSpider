@@ -5,7 +5,7 @@
     "require": {
         "php": "^7.2",
         "owner888/phpspider": "dev-master",
-        "guzzlehttp/guzzle": "^7.4@dev"
+        "guzzlehttp/guzzle": "7.3.0"
     },
     "require-dev": {
         "php": "^7.2"
