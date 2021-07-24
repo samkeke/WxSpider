@@ -1,5 +1,5 @@
 {
-    "name": "wangxiaoyu/wxspider",
+    "name": "samkeke/wxspider",
     "description": "微信文章爬虫，扫码登录微信开启爬虫脚本",
     "type": "library",
     "require": {
