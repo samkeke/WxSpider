@@ -65,14 +65,19 @@ class WeChatLoginController
         return "qrcode_{$this->_key}" . ".png";
     }
 
-    private function _log($msg)
+    private function _log($msg , $lable = "info")
     {
-        Log::info("[微信调度:" . date("Y-m-d H:i:s") . "] ======: {$msg}");
+        if ($lable == "info"){
+            Log::info("[微信调度:" . date("Y-m-d H:i:s") . "] ======: {$msg}");
+        }elseif ($lable == "error"){
+            Log::error("[微信调度:" . date("Y-m-d H:i:s") . "] ======: {$msg}");
+        }
     }
 
     public function getToken()
     {
-        $getToken = db::get_one("Select * From `wx_spiders` Where `status`='0' and token != '' order by id desc");
+        $date = date('Y-m-d H:i:s',strtotime('+1 hour'));
+        $getToken = db::get_one("Select * From `wx_spiders` Where `status`='0' and token != '' and `updated_at` < '".$date."' order by id desc");
         if (!empty($getToken)) {
             return $getToken['token'];
         }
@@ -192,7 +197,7 @@ class WeChatLoginController
         $_res = $this->curl($this->_apis["bizlogin"], $_input);
         $this->_log(print_r($_res, true));
         if ($_res["base_resp"]["ret"] != 0) {
-            $this->_log("error = " . $_res["base_resp"]["err_msg"]);
+            $this->_log("error = " . $_res["base_resp"]["err_msg"] , "error");
             return false;
         }
         $redirect_url = $_res["redirect_url"];//跳转路径
@@ -211,6 +216,7 @@ class WeChatLoginController
         $_input["refer"] = self::$_redirect_url;
         $_res    = $this->curl($this->_apis["qrcode"],$_input,"text");
         $path = $this->_getSavePath();
+        dd($path);
         $fp     = fopen($path, "w+") or die("open fails");
         fwrite($fp,$_res) or die("fwrite fails");
         fclose($fp);
@@ -239,8 +245,8 @@ class WeChatLoginController
         $_input["refer"] = "https://mp.weixin.qq.com";
         $_res = $this->curl($this->_apis["login"], $_input);
         if ($_res["base_resp"]["ret"] !== 0) {
-            $this->_log("登陆异常:".$_res["base_resp"]["err_msg"]);
-            return $this->error($_res["base_resp"]["err_msg"]);
+            $this->_log("error 登陆异常:".$_res["base_resp"]["err_msg"] , "error");
+            return $_res;
         }
         self::$_redirect_url = "https://mp.weixin.qq.com" . $_res["redirect_url"];//跳转路径
         return $_res;
