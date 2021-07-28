@@ -5,38 +5,27 @@
  * Date: 2020-09-05
  * Time: 22:31
  */
+namespace WxSpider\Service;
 
-namespace Spider\Controller;
+use phpspider\core\db;
+use WxSpider\Service\Common\Common;
+use WxSpider\Service\Common\Log;
 
-use CodeIgniter\Log\Logger;
-use function Sodium\add;
-use Think\Controller;
-use Think\Log;
-
-class WeChatLoginController extends Controller
+class WeChatLoginController
 {
+    private $config;
+    private $projectRoot;
+    public function __construct($dbConfig)
+    {
+        // 数据库配置
+        db::set_connect('default', $dbConfig);
+        // 数据库链接
+        db::_init();
+        $this->config = Common::getConfig();
+        $this->projectRoot = __DIR__ . '/../../../../wangxiaoyu/';
 
-    /**
-     * @auto 创建文件目录
-     * @param
-     * @return .
-     * @author 王晓宇
-     * @data 2019/4/29
-     * @time 17:12
-     */
-    function mymkdir($path,$mode=0755){
-        if (is_dir($path)){
-            return true;
-        }else{ //不存在则创建目录
-            $re=mkdir($path,$mode,true);
-            //第三个参数为true即可以创建多极目录
-            if ($re){
-                return true;
-            }else{
-                return false;
-            }
-        }
     }
+
     //--------------------------------------------------------LOGIN START
     public $_apis = [
         "host" => "https://mp.weixin.qq.com/",
@@ -48,6 +37,7 @@ class WeChatLoginController extends Controller
         "bizlogin" => "https://mp.weixin.qq.com/cgi-bin/bizlogin?action=login&lang=zh_CN",
         "articlelist" => "https://mp.weixin.qq.com/cgi-bin/appmsg?action=list_ex&type=9&query=&lang=zh_CN&f=json&ajax=1"
     ];
+
     private static $_redirect_url = "";
     private $_key = "tmall";
     public $spiderId = 0;
@@ -58,15 +48,15 @@ class WeChatLoginController extends Controller
 
     private function _getCookieFile()
     {
-        $path = C("UPLOADPATH") . "spider/";
-        $this->mymkdir($path);
+        $path = $this->projectRoot . "spider/";
+        Common::mymkdir($path);
         return $path . "cookie_{$this->_key}.text";
     }
 
     private function _getSavePath()
     {
-        $path = C("UPLOADPATH") . "spider/";
-        $this->mymkdir($path);
+        $path = $this->projectRoot . "spider/";
+        Common::mymkdir($path);
         return $path . $this->_qrcodeName();
     }
 
@@ -77,16 +67,12 @@ class WeChatLoginController extends Controller
 
     private function _log($msg)
     {
-        log_message('info' , "[微信调度:" . date("Y-m-d H:i:s") . "] ======: {$msg}");
+        Log::info("[微信调度:" . date("Y-m-d H:i:s") . "] ======: {$msg}");
     }
 
     public function getToken()
     {
-//        $isLogin = session("token_".$this->_key);
-//        if(!empty($isLogin)){
-//            return $isLogin;
-//        }
-        $getToken = M("Spider")->where(['id' => $this->spiderId])->find();
+        $getToken = db::get_one("Select * From `wx_spiders` Where `status`='0' and token != '' order by id desc");
         if (!empty($getToken)) {
             return $getToken['token'];
         }
@@ -95,40 +81,25 @@ class WeChatLoginController extends Controller
 
     public function setToken($token)
     {
-//        session("token_".$this->_key , $token);
-        M("Spider")->where(['id' => $this->spiderId])->save([
+        db::update("wx_spiders" , [
             "token" => $token,
             "cookie_file" => $this->_getCookieFile(),
-            "update_time" => date("Y-m-d H:i:s", time())
-        ]);
-    }
-
-    public function setProxy(){
-        $proxyKey = rand(0, count($this->proxy)-1);
-        M("Spider")->where(['id' => $this->spiderId])->save([
-            "proxy" => $this->proxy[$proxyKey],
-            "update_time" => date("Y-m-d H:i:s", time())
+            "updated_at" => date("Y-m-d H:i:s", time())
+        ], [
+            'id' => $this->spiderId,
         ]);
     }
 
     public function getProxy(){
-        $proxyKey = M("Spider")->field("proxy_key")->where(['id' => $this->spiderId])->find();
+        $proxyKey = db::get_one("Select `proxy_key` From `wx_spiders` Where `id`= ".$this->spiderId);
         if (!empty($proxyKey)) {
             return $this->proxy[$proxyKey['proxy_key']];
         }
         return "";
     }
 
-    public function setUseragents(){
-        $uaKey = rand(0, count($this->useragents)-1);
-        M("Spider")->where(['id' => $this->spiderId])->save([
-            "ua_key" => $uaKey,
-            "update_time" => date("Y-m-d H:i:s", time())
-        ]);
-    }
-
     public function getUseragents(){
-        $uaKey = M("Spider")->field("ua_key")->where(['id' => $this->spiderId])->find();
+        $uaKey = db::get_one("Select `ua_key` From `wx_spiders` Where `id`= ".$this->spiderId);
         if (!empty($uaKey)) {
             return $this->useragents[$uaKey['ua_key']];
         }
@@ -146,22 +117,19 @@ class WeChatLoginController extends Controller
             return true;
         } else {
             $time = date("Y-m-d H:i:s", time());
-            $config = C("SPIDER");
+            $config = $this->config;
             $this->useragents = $config['user_agent'];
             $this->proxy = $config['client_ip'];
             //初始化ua和ip
             $uaKey = rand(0, count($this->useragents)-1);
             $proxyKey = rand(0, count($this->proxy)-1);
-            $addSpider = M("Spider")->add([
-                "create_time" => $time,
-                "update_time" => $time,
+            $addSpider = db::insert("wx_spiders" , [
+                "created_at" => $time,
                 "proxy_key" => $proxyKey,
                 "ua_key" => $uaKey,
             ]);
             if ($addSpider) {
-                unlink($this->_getCookieFile());
-                $this->setProxy();
-                $this->setUseragents();
+                @unlink($this->_getCookieFile());
                 $this->spiderId = $addSpider;
                 //先要获取首页!!!
                 $this->curl($this->_apis['host'], "", "text");
@@ -247,8 +215,11 @@ class WeChatLoginController extends Controller
         fwrite($fp,$_res) or die("fwrite fails");
         fclose($fp);
         if($fp){
-            M("Spider")->where(['id' => $this->spiderId])->save([
-                "qrimg" => $path
+            db::update("wx_spiders" , [
+                "qrimg" => $path,
+                "updated_at" => date("Y-m-d H:i:s", time())
+            ], [
+                'id' => $this->spiderId,
             ]);
             $this->_log("下载二维码成功");
         }else{
@@ -278,11 +249,6 @@ class WeChatLoginController extends Controller
     function getWxRandomNum()
     {
         return "0." . mt_rand(1000000000000000, 9999999999999999);
-    }
-
-    function getUaIp(){
-        $getSpiderInfo = M("Spider")->where(['status' => 0, 'token' => ['neq', 'not null']])->order('id desc')->find();
-
     }
 
     /**
