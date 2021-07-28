@@ -25,7 +25,7 @@ use phpspider\core\selector;
 /* Do NOT delete this comment */
 /* 不要删除这段注释 */
 define('UPLOADPATH',__DIR__. '/../../../data/upload/attachment');
-define('COOKIEPATH' , __DIR__. '/../../../data/upload/');
+define('COOKIEPATH' , __DIR__ . '/../../../data/upload/');
 $config = require_once __DIR__ . '/../../../data/conf/config.php'; //配置
 $type = array_slice($argv, 1);
 $args = array_slice($argv, 2);
