@@ -9,7 +9,7 @@ namespace WxSpider\Service;
 
 use phpspider\core\db;
 use WxSpider\Service\Common\Common;
-use WxSpider\Service\Common\Log;
+use phpspider\core\log;
 
 class WeChatLoginController
 {
@@ -67,10 +67,11 @@ class WeChatLoginController
 
     private function _log($msg , $lable = "info")
     {
+        log::$log_file =  __DIR__ . "/../../../../../../log/phpspider.log";
         if ($lable == "info"){
-            Log::info("[微信调度:" . date("Y-m-d H:i:s") . "] ======: {$msg}");
+            log::info("[微信调度:" . date("Y-m-d H:i:s") . "] ======: {$msg}");
         }elseif ($lable == "error"){
-            Log::error("[微信调度:" . date("Y-m-d H:i:s") . "] ======: {$msg}");
+            log::error("[微信调度:" . date("Y-m-d H:i:s") . "] ======: {$msg}");
         }
     }
 

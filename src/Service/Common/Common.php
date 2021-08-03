@@ -139,5 +139,68 @@ class Common
         return array('file_name' => $fileName, 'save_path' => $saveDir . $fileName);
     }
 
+    /**
+     * @auto 远程请求图片地址
+     * @param
+     * @return .
+     * @author 王晓宇
+     * @data 2019/5/16
+     * @time 16:58
+     */
+    public static function curlGet($url)
+    {
+        $headers = array(
+            'User-Agent:Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.47 Safari/536.11Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.47 Safari/536.11',
+        );
+        $ch = curl_init();
+        //设置一个cURL传输选项。
+        curl_setopt($ch, CURLOPT_URL, $url);                    //目标
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE); // 对认证证书来源的检查
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE); // 从证书中检查SSL加密算法是否存在
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);//要求结果为字符串且输出到屏幕上
+        $values = curl_exec($ch);
+        if ($values === false) {
+            echo 'Curl error: ' . curl_error($ch);
+        }
+        curl_close($ch);
+        return ($values);
+    }
+
+    /**
+     * 特殊字符转换
+     * @author bignerd
+     * @since  2016-08-16T17:30:52+0800
+     * @param  $string
+     * @return $string
+     */
+    public static function htmlTransform($string)
+    {
+        $string = str_replace('&quot;', '"', $string);
+        $string = str_replace('&amp;', '&', $string);
+        $string = str_replace('amp;', '', $string);
+        $string = str_replace('&lt;', '<', $string);
+        $string = str_replace('&gt;', '>', $string);
+        $string = str_replace('&nbsp;', ' ', $string);
+        $string = str_replace("\\", '', $string);
+        return $string;
+    }
+
+    public static function getRemoteFileExt($url)
+    {
+        $ext = 'png';
+        if($url){
+            $queryParts = explode("&" , explode("?" , $url)[1]);
+
+            $params = array();
+            foreach ($queryParts as $param) {
+                $item = explode('=', $param);
+                $params[$item[0]] = $item[1];
+            }
+            $ext = isset($params['wx_fmt']) ? $params['wx_fmt'] : "png";
+        }
+        return $ext;
+    }
 }
 
